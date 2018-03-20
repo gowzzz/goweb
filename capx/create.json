@@ -1,0 +1,34 @@
+{
+		"id": 1,
+		"content": "helloword",
+		"author": {
+				"id": 2,
+				"name": "wz"
+		},
+		"comments": [
+				{
+						"id": 1,
+						"content": "hellow1",
+						"author": {
+								"id": 3,
+								"name": "wz3"
+						}
+				},
+				{
+						"id": 2,
+						"content": "hellow2",
+						"author": {
+								"id": 4,
+								"name": "wz4"
+						}
+				},
+				{
+						"id": 3,
+						"content": "hellow3",
+						"author": {
+								"id": 5,
+								"name": "wz5"
+						}
+				}
+		]
+}

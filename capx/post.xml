@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<post id="1">
+	<content>hello world2</content>
+	<author id="2">wz2</author>
+	<comments>
+		<comment id="1">
+			<content>hello world3</content>
+			<author id="3">wz3</author>
+		</comment>
+		<comment id="2">
+			<content>hello world4</content>
+			<author id="4">wz4</author>
+		</comment>
+		<comment id="3">
+			<content>hello world5</content>
+			<author id="5">wz5</author>
+		</comment>
+		<comment id="4">
+			<content>hello world6</content>
+			<author id="6">wz6</author>
+		</comment>
+		<comment id="5">
+			<content>hello world7</content>
+			<author id="7">wz7</author>
+		</comment>
+	</comments>
+</post>

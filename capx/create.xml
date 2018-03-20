@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<post id="1">
+	<content>helloword</content>
+	<author id="2">wz</author>
+	<comments>
+		<comment id="1">
+			<content>hellow1</content>
+			<author id="3">wz3</author>
+		</comment>
+		<comment id="2">
+			<content>hellow2</content>
+			<author id="4">wz4</author>
+		</comment>
+		<comment id="3">
+			<content>hellow3</content>
+			<author id="5">wz5</author>
+		</comment>
+	</comments>
+</post>

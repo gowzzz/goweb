@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>mosaic</title>
+</head>
+<body>
+	<div class="container">
+		<div>
+			<img src="data:image/jpg;base64,{{.original}} width=100%">
+		</div>
+		<div>
+			<img src="data:image/jpg;base64,{{.moasic}} width=100%">
+		</div>
+		<div>{{.duration}}</div>
+	</div>
+</body>
+</html>
