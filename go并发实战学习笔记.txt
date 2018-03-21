@@ -1,0 +1,546 @@
+ 这是go语言实战的代码  https://github.com/goinaction/code
+
+  这是go语言实战的第一章
+{
+Go 语言对传统的面向对象开发进行了重新思考，并且提供了更高效的复用代码的手段。
+Go 语言运行时会自动在配置的一组逻辑处理器上调度执行 goroutine
+每个逻辑处理器绑定到一个操作系统线程上
+
+并发的最难的部分就是要确保其他并发运行的进程、线程或 goroutine 不会意外修改用户的数据
+
+需要强调的是，通道并不提供跨 goroutine 的数据访问保护机制。
+如果通过通道传输数据的一份副本，那么每个 goroutine 都持有一份副本，各自对自己的副本做修改是安全的。
+当传输的是指向数据的指针时，如果读和写是由不同的 goroutine 完成的，每个 goroutine 依旧需要额外的同步动作。
+
+Go 语言提供了灵活的、无继承的类型系统
+Go 使用组合（composition）设计模式，只需简单地将一个类型嵌入到另一个类型，就能复用所有的功能。
+
+Go 语言还具有独特的接口实现机制，允许用户对行为进行建模，而不是对类型进行建模。
+编译器会判断一个类型的实例是否符合正在使用的接口。
+鸭子类型：
+  接口用于描述类型的行为。一个类型的实例实现了一个接口，意味着这个实例可以执行一组特定的行为。
+  
+如果一个类型实现了一个接口的所有方法，那么这个类型的实例就可以存储在这个接口类型的实例中，不需要额外声明。
+
+
+Go 语言把无趣的内存管理交给专业的编译器去做
+}
+
+第一章 初识GO语言
+{
+  vendor使用：
+    假如多个应用使用一个依赖包的不同版本
+    vendor目录允许不同的代码库拥有它自己的依赖包，并且不同于其他代码库的版本
+    
+    windows报错：https://github.com/Masterminds/glide/issues/873
+      cmd := exec.Command("cmd.exe", "/c", "copy", o, n)
+        to
+      cmd := exec.Command("cmd.exe", "/c", "xcopy /s/y", o, n+"\\")
+    使用工具：glide
+      go get github.com/Masterminds/glide
+      go install github.com/Masterminds/glide
+      先进入一个项目：cd $GOPATH/src/foor
+      glide create/glide init   =》 y  p
+      glide get github.com/xxx
+      glide install
+      go build
+      glide up
+   
+      修改glide.yaml文件
+      glide install
+      glide up
+
+  
+  1、多编程范式：
+    支持函数式编程：函数类型是第一等类型
+     支持面向对象编程：有接口类型和实现类型的概念，但用嵌入代替了继承
+  
+  2、工程结构
+    推崇软件工程理念
+    
+    工作区：（就是一个对应于特定工程的目录）  GOPATH  保存用户工作区
+      src
+        /log
+        /xx包等
+        main.go 
+      pkg
+      bin
+      
+     下载源码后将gopcp.v2放在src目录下，而gopcp.v2下的vendor存放他的依赖；这样方便源码的移植
+  
+  3、文件读取比较：
+    golang读取文件的方式主要有4种：
+      使用File自带的Read方法
+      使用bufio库的Read方法
+      使用io/ioutil库的ReadAll()
+      使用io/ioutil库的ReadFile()
+    性能：
+      bufio > ioutil.ReadAll > File自带Read
+    结论：
+      当每次读取块的大小小于4KB，建议使用bufio.NewReader(f), 大于4KB用bufio.NewReaderSize(f,缓存大小)
+      要读Reader, 图方便用ioutil.ReadAll()
+      一次性读取文件，使用ioutil.ReadFile()
+      不同业务场景，选用不同的读取方式
+      
+}
+
+第二章 语法概述
+{
+
+1、基本构成要素（组成表达式和语句）
+  1.1、标识符，是程序实体的名称
+    预定义标识符：
+      基本数据类型的名称
+      接口类型、error类型
+      常量的true flase iota
+      所有内建函数的名称：
+       （append\cap\close\complex\copy\delete\imag\len\make\new\panic\print\println\real\recover）
+       空标识符：_
+  1.2、关键字
+    程序声明的关键字:2
+      import\package
+    程序实体声明和定义的关键字:8
+      chan\const\func\interface\map\struct\type\var
+    程序流程控制的关键字:15
+     go\select\switch\case\fallthrough\default\if\else\for\goto\range\continue\return\break\defer
+      
+    类型和潜在类型是不同的类型：
+      type myString string
+      rune是int32的别名，int32是rune的潜在类型
+      
+    空接口的字面量是interface{};任何类型都是空接口的实现类型
+  1.3、字面量(值的一种标记法)
+    表示基础数据类型值的各种字面量：
+      12E-3
+    表示构造各种自定义的复合数据类型的类型字面量：
+      type Person struct{
+        Name string
+        Age int
+      }
+    用于表示复合数据类型的值的复合字面量：
+    复合字面量一般由字面类型以及被花括号包围的复合元素列表组成
+      Person{Name:"wz",Age:26}  Person表示类型，紧随其后的是键值对表示的复合元素列表 
+  1.4、分隔符和操作符 21  
+    二元操作符：
+      ||  &&  == !=  <  <=  >  >=   /  % <<按位左移 >>按位右移  |按位或  &^按位清除   
+    即使一元又是二元的操作符：
+      +  +1  1+2
+      -   -1   1-2
+      ^（按位异或）   5^11=14   ^5=-6补码
+      *  *p   1*2
+      & 按位与
+    一元操作符
+      ！逻辑非
+      <- 接收操作符
+      
+    一元操作符优先级最高，其次是二元操作符如下的优先级  ：
+      * / % << >> & &^
+      + - | ^
+      == != < <= > >=
+      &&
+      ||
+  1.5、表达式
+    选择表达式：a.b
+    索引表达式:arr[1]
+    切片表达式:slice1[1:2]
+    类型断言:v1.(int)
+      注意事项：
+        1、 如果v1是一个非接口值，需要转换成接口值：interface{}(v1).(int)
+        2、 类型断言为否会引起运行时异常，解决办法：var i1,ok=interface{}(v1).(I1)
+          如果断言失败i1则是I1的零值，如果断言成功则i1则是v1转换成I1后的值
+   调用表达式:v1.M1()
+2、基础类型  18个
+  名称          字节宽度(*8)
+  bool          1
+  byte          1  uint8的别名  字节类型
+  rune          4  int32的别名   unicode字符类型
+  int/uint      4/8
+  int8/uint8/int16/uint16/int32/uint32/int64/uint64   1/2/4/8
+  float32/float64 
+  complex64/complex128  8/16
+  string        实质是字节序列，是不可变的  ``表示原生字符串字面量  ""表示解释型字面量
+  
+  rune的表示方式：
+  1、 字面量：'a'
+  2、 使用"\x"前导 后跟两位16进制数 即一个ASCII码值 "\xff"
+  3、 "\"前导 后跟三位八进制数  "\255" 范围为0-255
+  4、 "\u"前导的四位16进制数   只能表示两个字节宽度的值
+  5、 "\U"前导的8位16进制数，只能表示四个字节宽度的值，即UCS-4 表示法
+  6、 支持特殊的字符转义 "\a"、"\b"、"\f"、"\n"、"\r"、"\t"、"\v"、"\\"、"\'"、"\"" 
+    其他以\前导的字符序列都不合法
+    
+  只有基本类型及其别名类型才能作为常量的类型。。。
+  GO官网规范指出常量命名用驼峰，本书推荐全大写，且单词之间用 _ 分割
+  
+3、高级类型
+  数组  值类型
+    var [3]string{}的零值是不包含任何元素的数组：[3]string{}
+  
+  切片  引用类型
+    切片的零值是nil,len和cap都是0
+    len(a)   cap(a)   a=append(a,1)
+    a=make([]string,100,100)
+  
+  字典  引用类型
+    是哈希表的一个实现
+    零值也是nil
+    var m = map[string]bool{}  这个可以使用
+    len(m)
+    delete(m)
+    var m2 map[string]bool不能直接使用，需要make初始化后才能使用：m2 = make(map[string]bool)
+  
+  函数和方法
+    函数类型的零值是 nil
+    函数类型是一等类型，表示函数可以当做值来传递和使用
+    函数的返回值有名字的时候，可以直接给该名字赋值，相当于设置了返回值，最后直接写return即可
+    
+    方法是函数的一种，是与某个数据类型关联起来的函数  
+      值方法和指针方法的规则：
+        1、 接受者变量的值实际是一个复制品，
+        该值不是指针则没有办法修改源值；该值是指针，则复制出来的指针指向同一地址则会修改源值；
+        如果接受者是引用类型或者其别名，即使是值方法也会修改原址。
+        
+        2、 非指针的数据类型，他的方法集只有值方法；
+          而他的指针类型的方法集则包含值方法和指针方法；
+          但是值类型也可以调用指针方法，go内部将i1.add(2)转换成了(&i1).add(2)
+          第二个规则对编写接口类型的实现类型非常有用
+    
+  接口  用于定义一组行为
+    每个行为都由一个方法声明表示
+    一个类型实现了该接口的所有行为，则该类型就是该接口类型的实现类型
+    
+    接口类型可以和实现了该接口类型的实现类型相互赋值
+    
+    如果以指针方法实现的该接口，则*type才是实现了该接口类型的实现类型，而不是type
+    
+    new新建一个类型并返回指向该类型值的指针
+    
+  结构体  值类型
+    type s struct{
+      name string
+      age int
+    }的零值是s{}
+    嵌入类型规则比较复杂，不建议使用
+  
+
+  
+    
+4、流程控制语句
+  没有do 和 while
+  switch 可以用来类型判断
+  break continue 后面可以跟标签跳转多层循环
+  defer方便执行异常捕获和资源回收
+  select 
+  go
+  全域代码块、代码包代码块、源码文件代码块
+  if  for  switch select 都是一个代码块，有自己的作用域 
+  case分支也是一个代码块，有自己的作用域
+
+  作用域规则：
+    1 预定义标识符的作用域是全域代码块
+    2 表示常量、变量、函数（不包含方法）、类型且声明在函数外的标识符的作用域是当前代码包代码块
+    3 被导入的代码包的名称的作用域是当前的源码文件代码块
+    4 表示方法接受者、方法参数、方法结果的标识符的作用域是方法代码块
+    5 表示变量、常量、类型、函数的标识符如果声明在函数内部，作用域则是它声明处的代码块
+
+  
+  if switch可以额外包含初始化语句
+  switch用来判断类型：
+    var v interface{}
+    switch v.(type){//switch i: = v.(type)  i保存的是v的值，i的类型是v的实际类型
+      case string:
+        xxx
+        fallthrough //表示如果进入当前分支，不会跳出switch，而是继续查找是否还有符合的其他分支
+      case int,uint:
+        xxx
+      default:
+        xxx  %T   i
+    }
+    
+    
+    recover 应该配合defer使用
+     如果当前程序有异常，则会被recover捕获到，而阻止了异常
+     defer func(){
+       if p:=recover();p!=nil{
+         fmt.Printf("xx%s",p)
+       }
+     }
+}
+
+
+第三章 并发编程
+{
+  虽然go语言无需操作内核线程，但是了解其中的概念知识是有必要的
+}
+
+
+第四章 go的并发机制
+{
+go在原有的内核线程之上搭建了一个特有的两级线程模型-gotoutine
+  不要用共享内存的方式通信，而是以通信（channel）作为手段来共享内存
+  不过go依然提供了传统的同步方式：互斥量、条件变量等
+  
+  等有空再结合源码研究并发实现原理
+  1、原理
+  2、goroutine
+    go 表达式语句
+    表达式是描述针对若干操作数的计算方法的式子
+    下面函数的调用表达式不能称为表达式语句：
+      append\cap\complex\imag\len\make\new\real\unsafe.Alignof\unsafe.Offsetof\unsafe.Sizeof
+    
+    下面的就可以：
+      go println("gogogogo") //可能因为并发的原因，有时候能看到打印，有时候看不读奥
+      
+      go runc(){...}()
+      
+      go执行的返回值都会在后台丢弃
+      
+        下面可能会打印5个ee，因为name最后成为了ee，而for执行的非常快，此时go可能没开始执行
+      	names := []string{"aa", "bb", "cc", "dd", "ee"}
+        for _, name := range names {
+          go func() {
+            println(name)
+          }()
+        }
+        time.Sleep(time.Second)
+    
+  3、chan
+    chan是用来传递值的，不是用来保存值的，所有他没有值表示法
+     单向通道不能转换成双向通道
+     select{
+       case e,ok:= <- chan1:
+        if !ok{
+          fmt.xxx
+          break
+        }
+        xxx
+     }
+     
+  select分支选择规则：
+    在开始执行select语句的时候，所有跟在case关键字右边的发送或接受语句中的通道表达式和元素表达式都会先求值（求职顺序是从左到右自上而下）。不管他的case是否被选择都是这样。
+    
+    在执行select语句的时候回自上而下的判断每个case的发送或接收操作是否可以立即进行（不阻塞），不阻塞则会被选中，其他case则会被忽略；
+    如果多个case同时满足条件则会随机选择一个发送。
+    如果都不满足条件，则会一直阻塞，直到至少一个case满足条件。（定时器和断续器用在此处）
+    
+    default只能有一个，且可以放在任何位置，不会影响逻辑。即不会先执行default的。
+     
+  time包和channels 
+  4、定时器
+    time.NewTimer  返回*time.Timer类型，有Reset和Stop方法可用（返回bool执行结果，false表示定时器已过期，true表示执行成功，但Reset执行结果必然是重置成功）
+    time.AfterFunc
+    
+    重置后只会到期1次
+  5、断续器
+  重置后，到期后会进入下个周期继续，循环
+  
+  6、载荷发生器
+    特别是互联网软件项目，当完成基本的功能测试后，希望获取性能数值：
+      1、 软件能跑多快
+      2、 高负载下的正确性
+      3、 保证一定正确性的条件下的可伸展性
+      4、 正常工作下 负载和系统资源使用率的关系
+    
+    功能：
+      向被测软件发送指定量的载荷，并记录被测软件处理载荷的结果。
+      可控性、可扩展性、丰富的结果..
+      
+    举例：
+      面向终端用户的所有API，处理超时时间都是200ms，
+      如果某个API在承受不高于最高每秒载荷量80%的负载情况下造成了处理超时，那么该API即为不合格
+      
+    参数：
+      QPS 每秒查询量（服务器上数据的读取操作）
+      TPS 每秒事务处理量（服务器上数据的写入和修改操作）
+      这里先不区分这两个参数
+      
+      把载荷和请求归为同一事物，控制每秒发送的载荷数量
+      
+      保证QPS大的情况下还要保证平均无故障时间（负载持续时间）长
+      
+      判断正确性：载荷的处理超时时间，设定最大允许耗时，超过这个耗时即为不合格
+      
+      参数：每秒载荷量  负载持续时间  处理超时时间
+     
+    输出结果：
+      请求和响应的内容、响应的状态、请求处理的耗时
+      
+    基本结构：
+      type Duration int64 //时间长度，其对应的时间单位有Nanosecond，Microsecond,Millisecond,Second,Minute,Hour
+}
+
+
+第五章 同步
+{
+  传统的同步工具，在sync和sync/atomic中
+  1、互斥锁 零值是可用的锁实例
+    var mutex sync.Mutex
+    mutex.Lock()/Unlock()  一般在defer中加Unlock()
+    
+    重复锁会阻塞，直到被解锁后才会执行锁操作
+    未锁的锁解锁时会引发运行时恐慌，而且无法用recover恢复
+    
+  2、读写锁  零值是可用的锁实例
+    针对读写操作的互斥锁
+    多个写操作互斥
+    读和写互斥
+    但多个读不互斥
+    
+    var rwmutex sync.RWMutex
+    
+    两对方法：
+      Lock/Unlock   写锁定   只能写禁止读
+      RLock/RUlock  读锁定   只能读禁止写
+  
+  3、条件变量
+  sync.Cond
+  4、原子操作
+    执行过程中不能被中断的操作
+    sync/atomic
+    可操作的类型：int32 int64 uint32 uint64 uintptr  unsafe.Pointer
+    操作：增或删、比较并交换、载入、存储、交换
+    
+  5、只执行一次
+  sync.Once
+  once.Do(xxx)
+  
+  6、WaitGroup
+  并发安全的，开箱即用的
+  
+  7、临时对象池
+  sync.Pool
+}
+
+
+第六章 爬虫框架设计
+{
+  设计一个容易定制和扩展的框架
+  1、介绍
+  网络爬虫是互联网终端用户的模仿者：（用户和浏览器）
+  模仿输入某个网站，并试图访问该网站上的内容，下载响应的内容，然后对下载的内容筛选分析处理
+  
+  功能： 
+    根据使用者的意愿，自动 下载、分析、筛选、统计、存储网络内容。
+  细节：
+    有效网络地址的发现和提取
+    有效网络地址的边界定义和检查
+    重复的网络地址的过滤
+  
+  逻辑：
+    根据网络地址组装http请求（header+body）
+    对网页的链接和内容进行筛选时的条件（提取条件、过滤条件、分类条件）
+    处理筛选出来的内容时设计的各种方式和步骤
+    
+  2、功能需求和分析
+    1、 下载器 下载内容
+    2、 分析器 分析下载的内容，筛选出可用的条目和需要访问的新地址
+    3、 条目处理通道 组装可用的新请求到下载器
+    
+  3、基本数据结构
+  {
+    为了避免不必要的零值生成和实例复制，使用指针来代替类型
+  量化内容爬取程度的常用方法是计算每个下载网络内容的深度，设置最大深度
+  请求：
+    type Request struct{
+      httpReq *http.Request
+      depth uint32 
+    }
+    创建新请求的函数
+    func NewQequest(httpReq *http.Request,depth uint32) *Request{
+      return &Request{httpReq:httpReq,depth:depth}
+    }
+    获取http请求的方法
+    func (req *Request) HTTPReq() *http.Request{
+      return req.httpReq
+    }
+    获取http请求深度的方法
+    func (req *Request) Depth() uint32{
+      return req.depth
+    }
+  
+  如何保证类型的值不可变：
+    1、类型中的所有字段为包级私有，即小写
+    2、编写创建和初始化该类型值的方法，一般以New开头
+    3、编写获取该类型字段的方法
+  
+  响应：
+    type Response struct{
+      httpResp *http.Response
+      depth uint32
+    }
+    创建新响应的函数
+    func NewResponse(httpResp *http.Response,depth uint32) *Response{
+      return &Response{httpResp:httpResp,depth:depth}
+    }
+    获取http响应的方法
+    func (req *Response) HTTPResp() *http.Response{
+      return req.httpResp
+    }
+    获取http响应深度的方法
+    func (req *Response) Depth() uint32{
+      return req.depth
+    }
+  
+  条目：
+    type Item map[string]interface{}
+  
+  Data接口：
+    作为数据类型的一个标签
+    type Data interface{
+      Valid() bool//判断数据类型是否有效
+    }
+    
+    func (req *Request) Valid() bool{
+      return req.httpReq!=nil && req.httpReq.URL!=nil
+    }
+    func (resp *Response) Valid() bool{
+      return resp.httpResp!=nil && resp.httpResp.Body!=nil
+    }
+    func (item Item) Valid() bool{
+      return item!=nil
+    }
+  
+  错误类型：
+    type ErrorType string
+    
+    只要某个类型实现了  func Error() string方法，即为实现了error接口
+    type CrawlerError interface{
+      Type() ErrorType//获取错误类型
+      Error() string//获取错误信息
+    }
+    
+    type myCrawlerError struct{
+      errType ErrorType 
+      errMsg string
+      fullErrMsg string
+    }
+    
+    // 错误类型常量。
+    const (
+      // ERROR_TYPE_DOWNLOADER 代表下载器错误。
+      ERROR_TYPE_DOWNLOADER ErrorType = "downloader error"
+      // ERROR_TYPE_ANALYZER 代表分析器错误。
+      ERROR_TYPE_ANALYZER ErrorType = "analyzer error"
+      // ERROR_TYPE_PIPELINE 代表条目处理管道错误。
+      ERROR_TYPE_PIPELINE ErrorType = "pipeline error"
+      // ERROR_TYPE_SCHEDULER 代表调度器错误。
+      ERROR_TYPE_SCHEDULER ErrorType = "scheduler error"
+    )
+  }
+  
+  4、下载器接口
+  Module接口定义了组件的基本行为
+  //由标识组件类型的字母、代表生成顺序的序列号、用于定义组件的网络地址组成
+  type MID string
+  
+}
+
+
+其他学习资料
+{
+
+}
+
+
+
+
